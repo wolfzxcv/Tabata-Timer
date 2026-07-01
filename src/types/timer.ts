@@ -37,7 +37,7 @@ export const DEFAULT_SETTINGS: TimerSettings = {
   sets: 1,
   setRest: 60,
   muted: false,
-  theme: 'auto',
+  theme: 'auto'
 };
 
 export const CLASSIC_TABATA_VALUES = {
@@ -46,7 +46,7 @@ export const CLASSIC_TABATA_VALUES = {
   rest: 10,
   cycles: 8,
   sets: 1,
-  setRest: 0,
+  setRest: 0
 };
 
 export const PHASE_COLORS: Record<
@@ -57,19 +57,16 @@ export const PHASE_COLORS: Record<
   WORK: { bg: '#059669', text: '#fff' },
   REST: { bg: '#e11d48', text: '#fff' },
   SET_REST: { bg: '#2563eb', text: '#fff' },
-  COMPLETE: { bg: '#9333ea', text: '#fff' },
+  COMPLETE: { bg: '#9333ea', text: '#fff' }
 };
 
 export function isWorkoutComplete(
   currentIndex: number,
-  timelineLength: number,
+  timelineLength: number
 ): boolean {
   return currentIndex >= timelineLength;
 }
 
-export function getRemainingSeconds(
-  phaseEndTime: number,
-  now: number,
-): number {
+export function getRemainingSeconds(phaseEndTime: number, now: number): number {
   return Math.max(0, Math.ceil((phaseEndTime - now) / 1000));
 }

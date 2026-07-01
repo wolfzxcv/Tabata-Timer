@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS } from '../../src/types/timer';
-import { buildTimeline, totalWorkoutSeconds } from '../../src/utils/buildTimeline';
+import {
+  buildTimeline,
+  totalWorkoutSeconds
+} from '../../src/utils/buildTimeline';
 
 describe('buildTimeline', () => {
   it('builds classic tabata without SET_REST when setRest is 0', () => {
@@ -9,7 +11,7 @@ describe('buildTimeline', () => {
       prepare: 0,
       setRest: 0,
       sets: 1,
-      cycles: 8,
+      cycles: 8
     });
 
     expect(timeline.some((item) => item.type === 'SET_REST')).toBe(false);
@@ -23,7 +25,7 @@ describe('buildTimeline', () => {
       prepare: 0,
       sets: 2,
       cycles: 2,
-      setRest: 60,
+      setRest: 60
     });
 
     expect(timeline.filter((item) => item.type === 'SET_REST')).toHaveLength(1);
@@ -47,5 +49,14 @@ describe('buildTimeline', () => {
       setRest: 0,
     };
     expect(totalWorkoutSeconds(settings)).toBe(20 + 10 + 20);
+  });
+
+  it('matches sum of built timeline', () => {
+    const settings = { ...DEFAULT_SETTINGS };
+    const fromTimeline = buildTimeline(settings).reduce(
+      (sum, item) => sum + item.duration,
+      0,
+    );
+    expect(totalWorkoutSeconds(settings)).toBe(fromTimeline);
   });
 });

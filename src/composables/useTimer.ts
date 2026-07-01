@@ -1,10 +1,10 @@
-import { computed, onUnmounted, ref, type Ref } from 'vue';
+import { computed, onUnmounted, ref, watch, type Ref } from 'vue';
 import {
   getRemainingSeconds,
   isWorkoutComplete,
-  type TimerSettings,
   type TimelineItem,
-  type WorkoutStatus,
+  type TimerSettings,
+  type WorkoutStatus
 } from '../types/timer';
 import { buildTimeline } from '../utils/buildTimeline';
 import { useAudio } from './useAudio';
@@ -24,15 +24,16 @@ export function useTimer(muted: Ref<boolean>) {
   let loopTimer: ReturnType<typeof setInterval> | null = null;
   let pausedRemainingMs: number | null = null;
 
-  const { playBeep, unlockAudio } = useAudio(muted);
+  const { playBeep, unlockAudio, startCelebration, stopCelebration } =
+    useAudio(muted);
   const { acquire, release } = useWakeLock();
 
   const isComplete = computed(() =>
-    isWorkoutComplete(currentIndex.value, timeline.value.length),
+    isWorkoutComplete(currentIndex.value, timeline.value.length)
   );
 
   const currentPhase = computed(
-    () => timeline.value[currentIndex.value] ?? null,
+    () => timeline.value[currentIndex.value] ?? null
   );
 
   const totalSets = computed(() => snapshotSettings.value?.sets ?? 1);
@@ -85,15 +86,21 @@ export function useTimer(muted: Ref<boolean>) {
   function handleComplete() {
     stopLoop();
     void release();
+    startCelebration();
   }
 
-  function advancePhase(options: {
-    skipFeedback?: boolean;
-    chainEnd?: boolean;
-    now?: number;
-  } = {}) {
-    const { skipFeedback = false, chainEnd = false, now = performance.now() } =
-      options;
+  function advancePhase(
+    options: {
+      skipFeedback?: boolean;
+      chainEnd?: boolean;
+      now?: number;
+    } = {}
+  ) {
+    const {
+      skipFeedback = false,
+      chainEnd = false,
+      now = performance.now()
+    } = options;
 
     if (!skipFeedback) {
       vibrateOnTransition();
@@ -196,6 +203,7 @@ export function useTimer(muted: Ref<boolean>) {
 
   function exitWorkout() {
     stopLoop();
+    stopCelebration();
     void release();
     document.removeEventListener('visibilitychange', onVisibilityChange);
     status.value = 'IDLE';
@@ -206,19 +214,21 @@ export function useTimer(muted: Ref<boolean>) {
     resetPlayedBeeps();
   }
 
-  function finishToSetup() {
-    exitWorkout();
-  }
-
   onUnmounted(() => {
     stopLoop();
+    stopCelebration();
     document.removeEventListener('visibilitychange', onVisibilityChange);
+  });
+
+  watch(muted, (isMuted) => {
+    if (status.value === 'ACTIVE' && isComplete.value) {
+      if (isMuted) stopCelebration();
+      else startCelebration();
+    }
   });
 
   return {
     status,
-    timeline,
-    currentIndex,
     remainingSeconds,
     isComplete,
     currentPhase,
@@ -228,7 +238,5 @@ export function useTimer(muted: Ref<boolean>) {
     pause,
     resume,
     exitWorkout,
-    finishToSetup,
-    tick,
   };
 }

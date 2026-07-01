@@ -1,17 +1,3 @@
-<script setup lang="ts">
-defineProps<{
-  label: string;
-  modelValue: number;
-  min: number;
-  max: number;
-  accent?: string;
-}>();
-
-const emit = defineEmits<{
-  'update:modelValue': [value: number];
-}>();
-</script>
-
 <template>
   <div class="stepper" :style="{ '--accent': accent ?? '#71717a' }">
     <span class="stepper-label" :id="`label-${label}`">{{ label }}</span>
@@ -39,14 +25,30 @@ const emit = defineEmits<{
   </div>
 </template>
 
+<script setup lang="ts">
+defineProps<{
+  label: string;
+  modelValue: number;
+  min: number;
+  max: number;
+  accent?: string;
+}>();
+
+const emit = defineEmits<{
+  'update:modelValue': [value: number];
+}>();
+</script>
+
 <style scoped>
 .stepper {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  min-width: 0;
   padding: 1rem;
   border-radius: 0.75rem;
   background: var(--setup-card-bg);
+  border: 1px solid var(--setup-card-border);
   border-left: 4px solid var(--accent);
 }
 
@@ -61,24 +63,28 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: clamp(0.25rem, 2vw, 0.75rem);
+  min-width: 0;
 }
 
 .stepper-value {
-  font-size: 1.75rem;
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(1.25rem, 5vw, 1.75rem);
   font-weight: 700;
-  min-width: 3rem;
   text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .stepper-btn {
-  width: 3.5rem;
-  height: 3.5rem;
+  flex: 0 0 clamp(2.5rem, 12vw, 3.5rem);
+  width: clamp(2.5rem, 12vw, 3.5rem);
+  height: clamp(2.5rem, 12vw, 3.5rem);
   border: none;
   border-radius: 0.75rem;
   background: var(--setup-btn-bg);
   color: var(--setup-text);
-  font-size: 1.5rem;
+  font-size: clamp(1.125rem, 4vw, 1.5rem);
   cursor: pointer;
 }
 

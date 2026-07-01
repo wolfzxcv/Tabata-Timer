@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import { getRemainingSeconds, isWorkoutComplete } from '../../src/types/timer';
 
 describe('timer helpers', () => {
@@ -19,7 +18,7 @@ describe('useTimer catch-up logic', () => {
     const timeline = [
       { type: 'WORK' as const, duration: 20, cycleIndex: 1, setIndex: 1 },
       { type: 'REST' as const, duration: 10, cycleIndex: 1, setIndex: 1 },
-      { type: 'WORK' as const, duration: 20, cycleIndex: 2, setIndex: 1 },
+      { type: 'WORK' as const, duration: 20, cycleIndex: 2, setIndex: 1 }
     ];
 
     let currentIndex = 0;

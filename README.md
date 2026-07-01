@@ -33,11 +33,11 @@ npm run test:run
 
 ### What we test (and why)
 
-| Layer | Why |
-|-------|-----|
+| Layer                                              | Why                                             |
+| -------------------------------------------------- | ----------------------------------------------- |
 | `buildTimeline`, `parseSettings`, `formatDuration` | Pure functions — easiest to test, highest value |
-| Timer timestamp helpers | Time accuracy is critical for a timer app |
-| `NumberStepper` | Basic component interaction and bounds |
+| Timer timestamp helpers                            | Time accuracy is critical for a timer app       |
+| `NumberStepper`                                    | Basic component interaction and bounds          |
 
 **Linting:** `npm run lint` runs ESLint (Vue + TypeScript essentials). Formatting is not enforced — `vue-tsc` handles types in `src/`.
 

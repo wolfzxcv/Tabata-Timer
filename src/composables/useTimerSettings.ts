@@ -29,12 +29,16 @@ export function useTimerSettings() {
   }
 
   function resetToDefaults() {
-    settings.value = { ...DEFAULT_SETTINGS };
+    settings.value = {
+      ...DEFAULT_SETTINGS,
+      theme: settings.value.theme,
+      muted: settings.value.muted,
+    };
   }
 
   onMounted(loadSettings);
 
   watch(settings, debouncedSave, { deep: true });
 
-  return { settings, resetToDefaults, loadSettings };
+  return { settings, resetToDefaults };
 }

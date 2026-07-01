@@ -29,11 +29,12 @@ body {
 
 :root,
 [data-theme='light'] {
-  --setup-bg: #fafafa;
+  --setup-bg: #e8eaef;
   --setup-text: #111;
   --setup-card-bg: #fff;
-  --setup-btn-bg: #e4e4e7;
-  --setup-border: #d4d4d8;
+  --setup-btn-bg: #d4d4d8;
+  --setup-border: #c4c8d0;
+  --setup-card-border: #d4d4d8;
 }
 
 [data-theme='dark'] {
@@ -42,6 +43,7 @@ body {
   --setup-card-bg: #18181b;
   --setup-btn-bg: #27272a;
   --setup-border: #3f3f46;
+  --setup-card-border: #3f3f46;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -51,6 +53,7 @@ body {
     --setup-card-bg: #18181b;
     --setup-btn-bg: #27272a;
     --setup-border: #3f3f46;
+    --setup-card-border: #3f3f46;
   }
 }
 

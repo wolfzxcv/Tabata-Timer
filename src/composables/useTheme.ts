@@ -24,15 +24,6 @@ export function useTheme(theme: Ref<ThemePreference>) {
     theme.value = THEME_CYCLE[(index + 1) % THEME_CYCLE.length]!;
   }
 
-  function themeLabel(): string {
-    const labels: Record<ThemePreference, string> = {
-      auto: 'Theme: Auto',
-      light: 'Theme: Light',
-      dark: 'Theme: Dark',
-    };
-    return labels[theme.value];
-  }
-
   onMounted(() => {
     mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     mediaQuery.addEventListener('change', onSystemChange);
@@ -45,5 +36,5 @@ export function useTheme(theme: Ref<ThemePreference>) {
 
   watch(theme, applyTheme);
 
-  return { cycleTheme, themeLabel };
+  return { cycleTheme };
 }

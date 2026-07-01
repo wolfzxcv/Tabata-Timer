@@ -29,6 +29,14 @@ export default tseslint.config(
     },
   },
   {
+    files: ['tests/**/*.ts'],
+    languageOptions: {
+      globals: {
+        ...globals.vitest,
+      },
+    },
+  },
+  {
     files: ['**/*.vue'],
     languageOptions: {
       parser: vueParser,

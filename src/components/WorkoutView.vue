@@ -1,53 +1,3 @@
-<script setup lang="ts">
-import { computed, watch } from 'vue';
-import { PHASE_COLORS, type IntervalType } from '../types/timer';
-import type { useTimer } from '../composables/useTimer';
-
-const props = defineProps<{
-  timer: ReturnType<typeof useTimer>;
-}>();
-
-const phaseStyle = computed(() => {
-  if (props.timer.isComplete.value) {
-    return PHASE_COLORS.COMPLETE;
-  }
-  const type = props.timer.currentPhase.value?.type ?? 'WORK';
-  return PHASE_COLORS[type as IntervalType];
-});
-
-const phaseName = computed(() => {
-  if (props.timer.isComplete.value) return 'COMPLETE';
-  return props.timer.currentPhase.value?.type ?? '';
-});
-
-const progressLabel = computed(() => {
-  const phase = props.timer.currentPhase.value;
-  if (!phase || props.timer.isComplete.value) return '';
-  const cycle =
-    phase.type === 'PREPARE' ? '' : `Cycle ${phase.cycleIndex}/${props.timer.totalCycles.value}`;
-  const set =
-    phase.type === 'PREPARE' ? '' : `Set ${phase.setIndex}/${props.timer.totalSets.value}`;
-  return [cycle, set].filter(Boolean).join(' · ');
-});
-
-function updateThemeColor(color: string) {
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', color);
-}
-
-watch(
-  phaseStyle,
-  (style) => updateThemeColor(style.bg),
-  { immediate: true },
-);
-
-function confirmExit() {
-  if (window.confirm('End workout?')) {
-    props.timer.exitWorkout();
-  }
-}
-</script>
-
 <template>
   <div
     class="workout"
@@ -56,14 +6,20 @@ function confirmExit() {
       color: phaseStyle.text,
     }"
   >
+    <button
+      type="button"
+      class="mute-btn"
+      :aria-label="muted ? 'Unmute sounds' : 'Mute sounds'"
+      :aria-pressed="muted"
+      @click="emit('toggleMuted')"
+    >
+      {{ muted ? '🔇' : '🔊' }}
+    </button>
+
     <!-- Complete screen -->
     <div v-if="timer.isComplete.value" class="canvas complete">
       <h2 class="complete-title">Workout Complete 🎉</h2>
-      <button
-        type="button"
-        class="control-btn"
-        @click="timer.finishToSetup()"
-      >
+      <button type="button" class="control-btn" @click="timer.exitWorkout()">
         Back to Setup
       </button>
     </div>
@@ -125,12 +81,92 @@ function confirmExit() {
   </div>
 </template>
 
+<script setup lang="ts">
+import { computed, watch } from 'vue';
+import type { useTimer } from '../composables/useTimer';
+import { PHASE_COLORS, type IntervalType } from '../types/timer';
+
+const props = defineProps<{
+  timer: ReturnType<typeof useTimer>;
+  muted: boolean;
+}>();
+
+const emit = defineEmits<{
+  toggleMuted: [];
+}>();
+
+const phaseStyle = computed(() => {
+  if (props.timer.isComplete.value) {
+    return PHASE_COLORS.COMPLETE;
+  }
+  const type = props.timer.currentPhase.value?.type ?? 'WORK';
+  return PHASE_COLORS[type as IntervalType];
+});
+
+const phaseName = computed(() => {
+  if (props.timer.isComplete.value) return 'COMPLETE';
+  return props.timer.currentPhase.value?.type ?? '';
+});
+
+const progressLabel = computed(() => {
+  const phase = props.timer.currentPhase.value;
+  if (!phase || props.timer.isComplete.value) return '';
+  const cycle =
+    phase.type === 'PREPARE'
+      ? ''
+      : `Cycle ${phase.cycleIndex}/${props.timer.totalCycles.value}`;
+  const set =
+    phase.type === 'PREPARE'
+      ? ''
+      : `Set ${phase.setIndex}/${props.timer.totalSets.value}`;
+  return [cycle, set].filter(Boolean).join(' · ');
+});
+
+function updateThemeColor(color: string) {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', color);
+}
+
+watch(phaseStyle, (style) => updateThemeColor(style.bg), { immediate: true });
+
+function confirmExit() {
+  if (window.confirm('End workout?')) {
+    props.timer.exitWorkout();
+  }
+}
+</script>
+
 <style scoped>
 .workout {
   position: relative;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+}
+
+.mute-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+  width: 3rem;
+  height: 3rem;
+  border: none;
+  border-radius: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  color: inherit;
+  font-size: 1.25rem;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
+.mute-btn[aria-pressed='true'] {
+  opacity: 0.75;
+}
+
+.mute-btn:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 2px;
 }
 
 .canvas {
@@ -182,6 +218,14 @@ function confirmExit() {
   padding-bottom: 1rem;
 }
 
+.complete .control-btn {
+  flex: none;
+  width: 100%;
+  max-width: 24rem;
+  min-height: clamp(3rem, 12vh, 3.5rem);
+  max-height: 4rem;
+}
+
 .overlay {
   position: absolute;
   inset: 0;
@@ -207,8 +251,12 @@ function confirmExit() {
   font-weight: 800;
 }
 
-.control-btn {
+.controls .control-btn,
+.overlay-actions .control-btn {
   flex: 1;
+}
+
+.control-btn {
   min-height: 3.5rem;
   border: none;
   border-radius: 0.75rem;

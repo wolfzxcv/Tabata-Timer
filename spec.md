@@ -16,17 +16,17 @@ A web-based, mobile-friendly, highly responsive Tabata Timer built with **Vue 3 
 
 ## 2. Tech Stack
 
-| Include | Exclude (v1) |
-|---------|--------------|
-| Vue 3 (Composition API) | vue-router (single-page, state-driven views) |
-| TypeScript | Pinia / Vuex |
-| Vite | Tailwind CSS |
+| Include                                            | Exclude (v1)                                 |
+| -------------------------------------------------- | -------------------------------------------- |
+| Vue 3 (Composition API)                            | vue-router (single-page, state-driven views) |
+| TypeScript                                         | Pinia / Vuex                                 |
+| Vite                                               | Tailwind CSS                                 |
 | Scoped component CSS + shared CSS only when needed | Element Plus, Vuetify, or other UI libraries |
-| Web Audio API | External `.mp3` / `.wav` assets |
-| localStorage | vue-i18n |
-| `vite-plugin-pwa` (minimal offline cache) | Complex offline sync / background sync |
-| Vitest + `@vue/test-utils` | E2E testing (Playwright/Cypress) in v1 |
-| Basic a11y (semantic HTML, aria-labels) | Full WCAG audit / screen-reader countdown |
+| Web Audio API                                      | External `.mp3` / `.wav` assets              |
+| localStorage                                       | vue-i18n                                     |
+| `vite-plugin-pwa` (minimal offline cache)          | Complex offline sync / background sync       |
+| Vitest + `@vue/test-utils`                         | E2E testing (Playwright/Cypress) in v1       |
+| Basic a11y (semantic HTML, aria-labels)            | Full WCAG audit / screen-reader countdown    |
 
 ### Styling Approach
 
@@ -41,9 +41,9 @@ A web-based, mobile-friendly, highly responsive Tabata Timer built with **Vue 3 
 
 - **App has two rendering modes** — not vue-router:
 
-  | Condition | View |
-  |-----------|------|
-  | `status === 'IDLE'` | `SetupView` only |
+  | Condition           | View                                                                                        |
+  | ------------------- | ------------------------------------------------------------------------------------------- |
+  | `status === 'IDLE'` | `SetupView` only                                                                            |
   | `status !== 'IDLE'` | `WorkoutView` only — internal UI (running / paused / complete) handled inside `WorkoutView` |
 
   `App.vue` does not need to understand pause or completion; only whether the user is in Setup or Workout.
@@ -73,10 +73,10 @@ A web-based, mobile-friendly, highly responsive Tabata Timer built with **Vue 3 
 ```
 Tabata-Timer/
 ├── public/
-│   ├── manifest.json
-│   └── icons/
+│   └── icons.svg              # PWA / favicon asset
 ├── src/
 │   ├── App.vue                # IDLE → SetupView | NON-IDLE → WorkoutView
+│   ├── vite-env.d.ts          # Vue SFC module declarations
 │   ├── components/
 │   │   ├── SetupView.vue
 │   │   ├── WorkoutView.vue    # Running / paused overlay / complete screen (internal)
@@ -97,7 +97,7 @@ Tabata-Timer/
 │       └── global.css
 ├── tests/
 │   └── …
-├── vite.config.ts
+├── vite.config.ts             # Vite build + Vitest (`test` block)
 └── package.json
 ```
 
@@ -149,11 +149,11 @@ const isComplete = (state: WorkoutState) =>
 
 Three global statuses only:
 
-| Status | App renders | Wake Lock |
-|--------|-------------|-----------|
-| `IDLE` | SetupView | off |
+| Status   | App renders | Wake Lock                |
+| -------- | ----------- | ------------------------ |
+| `IDLE`   | SetupView   | off                      |
 | `ACTIVE` | WorkoutView | on (unless `isComplete`) |
-| `PAUSED` | WorkoutView | off |
+| `PAUSED` | WorkoutView | off                      |
 
 `ACTIVE` covers both in-progress countdown and workout complete — UI distinguishes via `isComplete`.
 
@@ -172,11 +172,11 @@ isComplete ──Back to Setup──► IDLE
 
 `WorkoutView` is **one component**, not three separate sub-views. It renders entirely from `{ status, isComplete, currentPhase }`:
 
-| Condition | Screen |
-|-----------|--------|
-| `isComplete` | Finish screen (`Workout Complete 🎉`) |
-| `status === 'PAUSED'` | Pause overlay |
-| otherwise | Running countdown |
+| Condition             | Screen                                |
+| --------------------- | ------------------------------------- |
+| `isComplete`          | Finish screen (`Workout Complete 🎉`) |
+| `status === 'PAUSED'` | Pause overlay                         |
+| otherwise             | Running countdown                     |
 
 Do **not** split into `WorkoutRunning.vue` / `WorkoutPaused.vue` / `WorkoutComplete.vue`.
 
@@ -192,14 +192,14 @@ Do **not** split into `WorkoutRunning.vue` / `WorkoutPaused.vue` / `WorkoutCompl
 
 ### Input Validation Ranges
 
-| Field | Min | Max |
-|-------|-----|-----|
-| prepare | 0 | 300 |
-| work | 5 | 300 |
-| rest | 0 | 300 |
-| cycles | 1 | 99 |
-| sets | 1 | 99 |
-| setRest | 0 | 600 |
+| Field   | Min | Max |
+| ------- | --- | --- |
+| prepare | 0   | 300 |
+| work    | 5   | 300 |
+| rest    | 0   | 300 |
+| cycles  | 1   | 99  |
+| sets    | 1   | 99  |
+| setRest | 0   | 600 |
 
 When `setRest` is `0`, omit `SET_REST` intervals entirely from the timeline.
 
@@ -218,36 +218,39 @@ When `setRest` is `0`, omit `SET_REST` intervals entirely from the timeline.
 
 - Setup only. **🌓 button** cycles `auto` → `light` → `dark` → `auto`.
 - Persisted in `tabata-settings.theme`.
+- **Light theme tokens** (in `global.css`): `--setup-bg: #e8eaef`, `--setup-card-bg: #fff`, `--setup-btn-bg: #d4d4d8`, `--setup-border` / `--setup-card-border` for clearer card separation on light backgrounds.
+- **Dark theme** unchanged high-contrast zinc palette.
 
 ### Setup Mode (`status === 'IDLE'`)
 
-| Element | Requirement |
-|---------|-------------|
-| **Header** | Total Workout Time + **🌓 theme toggle** |
-| **Classic Tabata preset** | One-tap; preserves current `theme` and `muted` |
-| **PREPARE / WORK / REST** | Color-accented steppers |
-| **CYCLES & SETS** | Side-by-side steppers |
-| **SET REST** | Stepper; `0` disables rest between sets |
-| **Mute toggle** | Disables beeps and vibration |
-| **Reset to defaults** | Full `DEFAULT_SETTINGS` including `theme: 'auto'` |
-| **START** | Snapshot settings → build timeline → `status = 'ACTIVE'` |
+| Element                   | Requirement                                                                                      |
+| ------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Header**                | Total Workout Time + **🔊 mute toggle** + **🌓 theme toggle**                                    |
+| **Preset row**            | **Classic** + **Defaults** side-by-side chip buttons; `#71717a` left accent (same neutral as CYCLES/SETS). Classic: `title` / `aria-label` carry full interval detail. |
+| **PREPARE / WORK / REST** | Color-accented steppers                                                                          |
+| **CYCLES & SETS**         | Side-by-side steppers                                                                            |
+| **SET REST**              | Stepper; `0` disables rest between sets                                                          |
+| **START**                 | Snapshot settings → build timeline → `status = 'ACTIVE'`                                         |
+
+**Classic** and **Defaults** both preserve current `theme` and `muted`. **Defaults** resets all interval fields to `DEFAULT_SETTINGS` values (not theme/muted).
 
 ### Workout Mode — Running (`status === 'ACTIVE'` && !`isComplete`)
 
-| Phase | Background | Text |
-|-------|------------|------|
-| `PREPARE` | `#f59e0b` (amber) | black |
-| `WORK` | `#059669` (emerald) | white |
-| `REST` | `#e11d48` (rose) | white |
-| `SET_REST` | `#2563eb` (blue) | white |
+| Phase      | Background          | Text  |
+| ---------- | ------------------- | ----- |
+| `PREPARE`  | `#f59e0b` (amber)   | black |
+| `WORK`     | `#059669` (emerald) | white |
+| `REST`     | `#e11d48` (rose)    | white |
+| `SET_REST` | `#2563eb` (blue)    | white |
 
-**Elements:** phase name, countdown (`clamp(4rem, 20vw, 12rem)`), progress (`Cycle 3/8` · `Set 1/2`), **Pause** and **Exit** (with confirmation).
+**Elements:** phase name, countdown (`clamp(4rem, 20vw, 12rem)`), progress (`Cycle 3/8` · `Set 1/2`), **🔊 mute toggle** (top-right; live — reads/writes persisted `muted`), **Pause** and **Exit** (with confirmation).
 
 **Layout:** `height: 100dvh`. **theme-color:** match current phase.
 
 ### Pause Overlay (`status === 'PAUSED'`)
 
 - Large **`PAUSED`** text on semi-transparent overlay.
+- **🔊 mute toggle** remains available (top-right).
 - **Resume** → `ACTIVE` · **Exit** → confirm → `IDLE`.
 - Timer frozen at paused remaining time.
 
@@ -255,7 +258,9 @@ When `setRest` is `0`, omit `SET_REST` intervals entirely from the timeline.
 
 - Background `#9333ea` (purple).
 - **`Workout Complete 🎉`**
-- **Back to Setup** → `IDLE`.
+- **🔊 mute toggle** remains available (stops/starts celebration loop when toggled).
+- **Back to Setup** → `exitWorkout()` → `IDLE`.
+- **Back to Setup** button: proportional height (`clamp` + `max-height`), not full-viewport flex stretch.
 - Do **not** auto-return. No Pause control on this screen.
 
 ### Lock Setup During Workout
@@ -271,7 +276,9 @@ When `status !== 'IDLE'`: `App.vue` renders **only** `WorkoutView`; `SetupView` 
 - **First interaction unlocks audio:** `AudioContext.resume()` on START.
 - **Countdown beeps:** 3, 2, 1 → short beep (`800 Hz, 0.1s`).
 - **Phase transition:** 0 / GO → longer beep (`1200 Hz, 0.4s`).
-- **Mute:** skip beeps and vibration when `muted === true`.
+- **Oscillator:** `square` wave at peak gain **`0.95`** (device/media volume still applies).
+- **Workout complete:** looping celebration arpeggio (`startCelebration` / `stopCelebration` in `useAudio.ts`) until **Back to Setup** or mute; toggling mute during complete screen stops/restarts the loop.
+- **Mute:** skip beeps and vibration when `muted === true`. Toggle anytime from Setup header or Workout top-right; persisted in `tabata-settings` and applied live during an active workout.
 - **Vibration:** `navigator.vibrate(200)` on phase transition if supported and not muted.
 
 #### Avoid Duplicate Beeps
@@ -287,14 +294,14 @@ During **catch-up advances** (tab suspend, §9): skip all beeps and vibration.
 
 Implement in `composables/useWakeLock.ts`:
 
-| Event | Action |
-|-------|--------|
-| `status → ACTIVE` (and !`isComplete`) | acquire wake lock |
-| `isComplete` | release wake lock |
-| `status → PAUSED` | release wake lock |
-| `status → IDLE` | release wake lock |
+| Event                                                                            | Action               |
+| -------------------------------------------------------------------------------- | -------------------- |
+| `status → ACTIVE` (and !`isComplete`)                                            | acquire wake lock    |
+| `isComplete`                                                                     | release wake lock    |
+| `status → PAUSED`                                                                | release wake lock    |
+| `status → IDLE`                                                                  | release wake lock    |
 | `visibilitychange` → visible **and** `status === 'ACTIVE'` **and** !`isComplete` | re-acquire wake lock |
-| API unavailable | silent no-op |
+| API unavailable                                                                  | silent no-op         |
 
 #### Idempotent Acquire
 
@@ -309,6 +316,7 @@ Wake Lock requests **must be idempotent**:
 
 - Primary: laptop browser. Secondary: mobile browser.
 - Setup: centered narrow column. Workout: full viewport, thumb-reach controls.
+- **NumberStepper:** `min-width: 0` in grid columns; button/value sizes via `clamp()` so CYCLES/SETS row does not overflow on narrow viewports.
 
 ### Basic Accessibility (a11y)
 
@@ -320,8 +328,8 @@ Wake Lock requests **must be idempotent**:
 
 ### PWA & Offline (v1)
 
-- **`manifest.json` + app icons** for Add to Home Screen.
-- **`vite-plugin-pwa`:** cache static assets; reliable offline after first visit.
+- **`vite-plugin-pwa`:** generates `manifest.webmanifest` at build; **`public/icons.svg`** for favicon and PWA icon.
+- Cache static assets; reliable offline after first visit.
 - **No `404.html` redirect in v1** — no client-side router.
 
 ---
@@ -331,7 +339,8 @@ Wake Lock requests **must be idempotent**:
 Implement in `composables/useAudio.ts`:
 
 - Single shared **`AudioContext`** instance.
-- `playBeep(frequency, duration)` respects `muted`.
+- `playBeep(frequency, duration)` respects `muted`; uses **`square`** oscillator and **`BEEP_PEAK_GAIN` (0.95)**.
+- `startCelebration()` / `stopCelebration()` — rapid high-frequency arpeggio loop for finish screen.
 - Scheduling driven by milestone dedup (§7), not raw timer ticks.
 
 ---
@@ -382,7 +391,7 @@ On normal (non-catch-up) phase advance: play transition beep, vibrate, reset `pl
 
 1. **START:** snapshot settings → `buildTimeline()` → `currentIndex = 0` → set `phaseEndTime` → `status = 'ACTIVE'`.
 2. **Update loop:** compute `remaining` → milestone beep checks → catch-up while-loop if needed.
-3. **Complete:** when `currentIndex >= timeline.length`, `isComplete` is true; release wake lock; show finish UI.
+3. **Complete:** when `currentIndex >= timeline.length`, `isComplete` is true; release wake lock; start celebration audio; show finish UI.
 4. **`SET_REST` skipped** when snapshot had `setRest === 0` (in `buildTimeline`).
 
 ---
@@ -391,20 +400,21 @@ On normal (non-catch-up) phase advance: play transition beep, vibrate, reset `pl
 
 ### Tooling
 
-- **Vitest** + **@vue/test-utils**
+- **Vitest** + **@vue/test-utils** — configured in **`vite.config.ts`** (`test.environment: 'jsdom'`, `globals: true`).
 - Scripts: `"test": "vitest"`, `"test:run": "vitest run"`
+- **`src/vite-env.d.ts`** — `*.vue` module declarations for TypeScript / IDE.
 
 ### What to Test
 
-| Target | Examples |
-|--------|----------|
-| `utils/buildTimeline.ts` | `setRest === 0`; multi-set order; indices |
-| `utils/parseSettings.ts` | Unknown keys ignored; missing fields defaulted |
-| `utils/formatDuration.ts` | `400` → `"6 min 40 sec"` |
-| `composables/useTimer.ts` | `getRemainingSeconds`; pause/resume; catch-up while-loop skips multiple phases; `isComplete` derivation (mock `performance.now`) |
-| `composables/useTimerSettings.ts` | Read/write; debounced save |
-| `components/NumberStepper.vue` | +/- clamping |
-| `components/SetupView.vue` (light) | Classic Tabata preset; START emits |
+| Target                             | Examples                                                                                                                         |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `utils/buildTimeline.ts`           | `setRest === 0`; multi-set order; indices                                                                                        |
+| `utils/parseSettings.ts`           | Unknown keys ignored; missing fields defaulted                                                                                   |
+| `utils/formatDuration.ts`          | `400` → `"6 min 40 sec"`                                                                                                         |
+| `composables/useTimer.ts`          | `getRemainingSeconds`; pause/resume; catch-up while-loop skips multiple phases; `isComplete` derivation (mock `performance.now`) |
+| `composables/useTimerSettings.ts`  | `resetToDefaults` preserves `theme` and `muted`                                                                                  |
+| `components/NumberStepper.vue`     | +/- clamping                                                                                                                     |
+| `components/SetupView.vue` (light) | Classic preset; START emits *(optional — not yet in test suite)*                                                                 |
 
 ### What NOT to Test in v1
 
@@ -435,7 +445,7 @@ README **Testing** section: how to run tests, why pure functions and timestamp l
 3. Implement types, `buildTimeline.ts`, `parseSettings.ts`, `formatDuration.ts`.
 4. Implement composables: `useTimerSettings`, `useAudio`, `useTimer`, `useWakeLock`, `useTheme`.
 5. Implement timestamp timer: three-status machine, `isComplete` derivation, catch-up while-loop.
-6. Build `SetupView` (steppers, Classic Tabata, 🌓, mute, reset, START).
+6. Build `SetupView` (steppers, Classic/Defaults chips, 🔊/🌓 header, START).
 7. Build `WorkoutView` (running, pause overlay, complete screen — internal UI states).
 8. Wire `App.vue`: `IDLE` → SetupView, `NON-IDLE` → WorkoutView.
 9. Wire idempotent wake lock + visibility re-acquire.

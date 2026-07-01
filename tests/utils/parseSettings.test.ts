@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS } from '../../src/types/timer';
 import { parseSettings } from '../../src/utils/parseSettings';
 
@@ -12,7 +11,7 @@ describe('parseSettings', () => {
     const parsed = parseSettings({
       ...DEFAULT_SETTINGS,
       vibration: true,
-      unknownField: 'x',
+      unknownField: 'x'
     });
     expect(parsed).toEqual(DEFAULT_SETTINGS);
     expect('vibration' in parsed).toBe(false);
@@ -22,7 +21,7 @@ describe('parseSettings', () => {
     const parsed = parseSettings({
       work: 9999,
       cycles: 0,
-      theme: 'invalid',
+      theme: 'invalid'
     });
     expect(parsed.work).toBe(300);
     expect(parsed.cycles).toBe(1);

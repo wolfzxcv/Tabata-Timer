@@ -43,5 +43,13 @@ export function buildTimeline(settings: TimerSettings): TimelineItem[] {
 }
 
 export function totalWorkoutSeconds(settings: TimerSettings): number {
-  return buildTimeline(settings).reduce((sum, item) => sum + item.duration, 0);
+  const prepare = settings.prepare > 0 ? settings.prepare : 0;
+  const workTotal = settings.sets * settings.cycles * settings.work;
+  const restTotal = settings.sets * Math.max(settings.cycles - 1, 0) * settings.rest;
+  const setRestTotal =
+    settings.setRest > 0 && settings.sets > 1
+      ? (settings.sets - 1) * settings.setRest
+      : 0;
+
+  return prepare + workTotal + restTotal + setRestTotal;
 }
