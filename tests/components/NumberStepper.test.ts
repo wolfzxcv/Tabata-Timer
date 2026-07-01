@@ -17,7 +17,10 @@ describe('NumberStepper', () => {
 
     await wrapper.setProps({ modelValue: 5 });
     expect(
-      wrapper.get('[aria-label="Decrease WORK"]').attributes('disabled')
-    ).toBeDefined();
+      wrapper.get('[aria-label="Decrease WORK"]').attributes('aria-disabled'),
+    ).toBe('true');
+
+    await wrapper.get('[aria-label="Decrease WORK"]').trigger('click');
+    expect(wrapper.emitted('update:modelValue')?.length ?? 0).toBe(1);
   });
 });

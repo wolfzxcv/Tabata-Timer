@@ -4,6 +4,11 @@
   box-sizing: border-box;
 }
 
+html {
+  /* App-wide: disable iOS double-tap zoom (incl. taps on disabled buttons) */
+  touch-action: manipulation;
+}
+
 html,
 body {
   margin: 0;

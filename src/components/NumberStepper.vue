@@ -5,9 +5,10 @@
       <button
         type="button"
         class="stepper-btn"
+        :class="{ 'stepper-btn--at-limit': modelValue <= min }"
         :aria-label="`Decrease ${label}`"
-        :disabled="modelValue <= min"
-        @click="emit('update:modelValue', Math.max(modelValue - 1, min))"
+        :aria-disabled="modelValue <= min"
+        @click="decrease"
       >
         −
       </button>
@@ -15,9 +16,10 @@
       <button
         type="button"
         class="stepper-btn"
+        :class="{ 'stepper-btn--at-limit': modelValue >= max }"
         :aria-label="`Increase ${label}`"
-        :disabled="modelValue >= max"
-        @click="emit('update:modelValue', Math.min(modelValue + 1, max))"
+        :aria-disabled="modelValue >= max"
+        @click="increase"
       >
         +
       </button>
@@ -26,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   label: string;
   modelValue: number;
   min: number;
@@ -37,6 +39,16 @@ defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: number];
 }>();
+
+function decrease() {
+  if (props.modelValue <= props.min) return;
+  emit('update:modelValue', props.modelValue - 1);
+}
+
+function increase() {
+  if (props.modelValue >= props.max) return;
+  emit('update:modelValue', props.modelValue + 1);
+}
 </script>
 
 <style scoped>
@@ -65,6 +77,7 @@ const emit = defineEmits<{
   justify-content: space-between;
   gap: clamp(0.25rem, 2vw, 0.75rem);
   min-width: 0;
+  touch-action: manipulation;
 }
 
 .stepper-value {
@@ -88,7 +101,8 @@ const emit = defineEmits<{
   cursor: pointer;
 }
 
-.stepper-btn:disabled {
+.stepper-btn--at-limit,
+.stepper-btn[aria-disabled='true'] {
   opacity: 0.35;
   cursor: not-allowed;
 }
