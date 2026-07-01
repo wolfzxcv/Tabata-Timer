@@ -59,6 +59,8 @@ body {
 
 button {
   font: inherit;
+  /* Prevent iOS double-tap zoom on buttons */
+  touch-action: manipulation;
 }
 
 button:focus-visible {

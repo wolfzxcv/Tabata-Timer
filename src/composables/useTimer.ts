@@ -173,7 +173,7 @@ export function useTimer(muted: Ref<boolean>) {
     status.value = 'ACTIVE';
     pausedRemainingMs = null;
 
-    await unlockAudio();
+    unlockAudio();
 
     const now = performance.now();
     setPhaseEndFromNow(0, now);
@@ -194,6 +194,7 @@ export function useTimer(muted: Ref<boolean>) {
 
   function resume() {
     if (status.value !== 'PAUSED' || pausedRemainingMs === null) return;
+    unlockAudio();
     phaseEndTime.value = performance.now() + pausedRemainingMs;
     pausedRemainingMs = null;
     status.value = 'ACTIVE';
@@ -237,6 +238,6 @@ export function useTimer(muted: Ref<boolean>) {
     start,
     pause,
     resume,
-    exitWorkout,
+    exitWorkout
   };
 }

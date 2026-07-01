@@ -22,34 +22,57 @@ const BEEP_PEAK_GAIN = 0.95;
 
 let celebrationTimer: ReturnType<typeof setInterval> | null = null;
 
+function scheduleBeep(ctx: AudioContext, frequency: number, duration: number) {
+  const oscillator = ctx.createOscillator();
+  const gainNode = ctx.createGain();
+
+  oscillator.connect(gainNode);
+  gainNode.connect(ctx.destination);
+  oscillator.frequency.value = frequency;
+  oscillator.type = 'square';
+
+  gainNode.gain.setValueAtTime(BEEP_PEAK_GAIN, ctx.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(
+    0.00001,
+    ctx.currentTime + duration
+  );
+
+  oscillator.start(ctx.currentTime);
+  oscillator.stop(ctx.currentTime + duration);
+}
+
 export function useAudio(muted: Ref<boolean>) {
-  async function unlockAudio() {
+  /**
+   * Must be invoked synchronously inside a user gesture (tap/click).
+   * Do not await before calling — iOS Safari drops the gesture context.
+   */
+  function unlockAudio() {
     const ctx = getAudioContext();
-    if (ctx.state === 'suspended') {
-      await ctx.resume();
-    }
+    void ctx.resume();
+
+    // Prime iOS output with a silent buffer during the same gesture.
+    const buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start(0);
+    source.stop(0);
   }
 
   function playBeep(frequency: number, duration: number) {
     if (muted.value) return;
 
     const ctx = getAudioContext();
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
+    if (ctx.state !== 'running') {
+      void ctx.resume().then(() => {
+        if (ctx.state === 'running' && !muted.value) {
+          scheduleBeep(ctx, frequency, duration);
+        }
+      });
+      return;
+    }
 
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    oscillator.frequency.value = frequency;
-    oscillator.type = 'square';
-
-    gainNode.gain.setValueAtTime(BEEP_PEAK_GAIN, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(
-      0.00001,
-      ctx.currentTime + duration
-    );
-
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + duration);
+    scheduleBeep(ctx, frequency, duration);
   }
 
   function stopCelebration() {
