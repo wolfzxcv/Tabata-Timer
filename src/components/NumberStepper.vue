@@ -57,7 +57,7 @@ function increase() {
   flex-direction: column;
   gap: 0.5rem;
   min-width: 0;
-  padding: 1rem;
+  padding: 0.3rem 0.625rem;
   border-radius: 0.75rem;
   background: var(--setup-card-bg);
   border: 1px solid var(--setup-card-border);

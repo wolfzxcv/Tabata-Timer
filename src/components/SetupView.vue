@@ -122,14 +122,14 @@ const totalLabel = computed(() => {
 function applyClassicTabata() {
   settings.value = {
     ...settings.value,
-    ...CLASSIC_TABATA_VALUES,
+    ...CLASSIC_TABATA_VALUES
   };
 }
 
 function toggleMuted() {
   settings.value = {
     ...settings.value,
-    muted: !settings.value.muted,
+    muted: !settings.value.muted
   };
 }
 </script>
@@ -137,12 +137,15 @@ function toggleMuted() {
 <style scoped>
 .setup {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: 0.75rem;
+  justify-content: space-evenly;
   width: 100%;
   max-width: 28rem;
+  min-height: 100%;
   margin: 0 auto;
-  padding: 1.5rem 1rem 2rem;
+  padding: 1rem;
+  box-sizing: border-box;
 }
 
 .setup-header {
@@ -218,7 +221,6 @@ function toggleMuted() {
 }
 
 .start-btn {
-  margin-top: 0.5rem;
   min-height: 3.75rem;
   border: none;
   border-radius: 0.75rem;
