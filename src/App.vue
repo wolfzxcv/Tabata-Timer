@@ -40,6 +40,9 @@ function toggleMuted() {
     ...settings.value,
     muted: !settings.value.muted,
   };
+  if (!isIdle.value) {
+    timer.unlockAudio();
+  }
 }
 
 function handleStart() {

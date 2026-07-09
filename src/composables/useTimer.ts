@@ -238,6 +238,7 @@ export function useTimer(muted: Ref<boolean>) {
     start,
     pause,
     resume,
-    exitWorkout
+    exitWorkout,
+    unlockAudio
   };
 }

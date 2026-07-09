@@ -273,12 +273,13 @@ When `status !== 'IDLE'`: `App.vue` renders **only** `WorkoutView`; `SetupView` 
 
 ### Audio & Haptics
 
-- **First interaction unlocks audio:** `AudioContext.resume()` on START.
+- **User-gesture unlock:** `unlockAudio()` on **START**, **Resume**, and **Workout mute toggle** — must run **synchronously** inside a tap/click (iOS/WebKit drops gesture context across `await`).
+- **iOS recovery:** after screen lock or long pause, **recreate** `AudioContext` when `suspended`, `interrupted`, or `closed`; do **not** call `resume()` from the timer loop (no user gesture there).
 - **Countdown beeps:** 3, 2, 1 → short beep (`800 Hz, 0.1s`).
 - **Phase transition:** 0 / GO → longer beep (`1200 Hz, 0.4s`).
 - **Oscillator:** `square` wave at peak gain **`0.95`** (device/media volume still applies).
 - **Workout complete:** looping celebration arpeggio (`startCelebration` / `stopCelebration` in `useAudio.ts`) until **Back to Setup** or mute; toggling mute during complete screen stops/restarts the loop.
-- **Mute:** skip beeps and vibration when `muted === true`. Toggle anytime from Setup header or Workout top-right; persisted in `tabata-settings` and applied live during an active workout.
+- **Mute:** skip beeps and vibration when `muted === true`. Toggle anytime from Setup header or Workout top-right; persisted in `tabata-settings` and applied live during an active workout. **Workout mute toggle** also calls `unlockAudio()` so audio can be restored without exiting the session.
 - **Vibration:** `navigator.vibrate(200)` on phase transition if supported and not muted.
 
 #### Avoid Duplicate Beeps
@@ -338,10 +339,21 @@ Wake Lock requests **must be idempotent**:
 
 Implement in `composables/useAudio.ts`:
 
-- Single shared **`AudioContext`** instance.
-- `playBeep(frequency, duration)` respects `muted`; uses **`square`** oscillator and **`BEEP_PEAK_GAIN` (0.95)**.
-- `startCelebration()` / `stopCelebration()` — rapid high-frequency arpeggio loop for finish screen.
+- Single shared **`AudioContext`** instance; **`ensureFreshContext()`** recreates it on `unlockAudio()` when state is not `running` (iOS cannot reliably resume after long suspend).
+- **`unlockAudio()`** — call only from user gestures (START, Resume, Workout mute toggle): recreate if needed, sync iOS silent-buffer priming, then `resume()` with a follow-up prime. Do **not** `await` before the first prime — iOS drops gesture context across `await`.
+- **`playBeep(frequency, duration)`** — respects `muted`; no-op when no context or `ctx.state !== 'running'`; **never** calls `resume()` (timer loop has no gesture). Uses **`square`** oscillator and **`BEEP_PEAK_GAIN` (0.95)**.
+- **`startCelebration()` / `stopCelebration()`** — rapid high-frequency arpeggio loop for finish screen.
+- **`useTimer`** exposes `unlockAudio` for `App.vue` mute toggle during workout.
 - Scheduling driven by milestone dedup (§7), not raw timer ticks.
+
+#### iOS / WebKit Notes
+
+| Situation | Behavior |
+| --------- | -------- |
+| User taps START / Resume / 🔊 during workout | `unlockAudio()` synchronously in click handler |
+| Timer tick tries to beep while suspended | `playBeep` returns early — wait for next user gesture |
+| Screen lock during pause (wake lock released) | Context suspends; Resume must unlock again |
+| `interrupted` state (Safari 16.4+) | Treat like suspend — recreate context on unlock |
 
 ---
 
@@ -412,6 +424,7 @@ On normal (non-catch-up) phase advance: play transition beep, vibrate, reset `pl
 | `utils/parseSettings.ts`           | Unknown keys ignored; missing fields defaulted                                                                                   |
 | `utils/formatDuration.ts`          | `400` → `"6 min 40 sec"`                                                                                                         |
 | `composables/useTimer.ts`          | `getRemainingSeconds`; pause/resume; catch-up while-loop skips multiple phases; `isComplete` derivation (mock `performance.now`) |
+| `composables/useAudio.ts`          | `unlockAudio` recreates non-running context; `playBeep` skipped when muted or context not running |
 | `composables/useTimerSettings.ts`  | `resetToDefaults` preserves `theme` and `muted`                                                                                  |
 | `components/NumberStepper.vue`     | +/- clamping                                                                                                                     |
 | `components/SetupView.vue` (light) | Classic preset; START emits *(optional — not yet in test suite)*                                                                 |

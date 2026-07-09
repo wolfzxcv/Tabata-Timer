@@ -3,14 +3,23 @@ import type { Ref } from 'vue';
 
 let audioCtx: AudioContext | null = null;
 
-function getAudioContext(): AudioContext {
-  if (!audioCtx) {
-    audioCtx = new (
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext })
-        .webkitAudioContext
-    )();
+function newAudioContext(): AudioContext {
+  return new (
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext: typeof AudioContext })
+      .webkitAudioContext
+  )();
+}
+
+function ensureFreshContext(): AudioContext {
+  if (audioCtx && audioCtx.state === 'running') {
+    return audioCtx;
   }
+  if (audioCtx) {
+    void audioCtx.close();
+    audioCtx = null;
+  }
+  audioCtx = newAudioContext();
   return audioCtx;
 }
 
@@ -41,38 +50,33 @@ function scheduleBeep(ctx: AudioContext, frequency: number, duration: number) {
   oscillator.stop(ctx.currentTime + duration);
 }
 
+function primeIosOutput(ctx: AudioContext) {
+  // Prime iOS output with a silent buffer during the same gesture.
+  const buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(ctx.destination);
+  source.start(0);
+  source.stop(0);
+}
+
 export function useAudio(muted: Ref<boolean>) {
   /**
    * Must be invoked synchronously inside a user gesture (tap/click).
    * Do not await before calling — iOS Safari drops the gesture context.
    */
   function unlockAudio() {
-    const ctx = getAudioContext();
-    void ctx.resume();
-
-    // Prime iOS output with a silent buffer during the same gesture.
-    const buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(ctx.destination);
-    source.start(0);
-    source.stop(0);
+    const ctx = ensureFreshContext();
+    primeIosOutput(ctx);
+    void ctx.resume().then(() => {
+      if (audioCtx !== ctx) return;
+      primeIosOutput(ctx);
+    });
   }
 
   function playBeep(frequency: number, duration: number) {
-    if (muted.value) return;
-
-    const ctx = getAudioContext();
-    if (ctx.state !== 'running') {
-      void ctx.resume().then(() => {
-        if (ctx.state === 'running' && !muted.value) {
-          scheduleBeep(ctx, frequency, duration);
-        }
-      });
-      return;
-    }
-
-    scheduleBeep(ctx, frequency, duration);
+    if (muted.value || !audioCtx || audioCtx.state !== 'running') return;
+    scheduleBeep(audioCtx, frequency, duration);
   }
 
   function stopCelebration() {
@@ -111,5 +115,8 @@ export function resetAudioContextForTests() {
     clearInterval(celebrationTimer);
     celebrationTimer = null;
   }
-  audioCtx = null;
+  if (audioCtx) {
+    void audioCtx.close();
+    audioCtx = null;
+  }
 }
