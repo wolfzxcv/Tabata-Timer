@@ -350,6 +350,7 @@ Implement in `composables/useAudio.ts`:
 
 | Situation | Behavior |
 | --------- | -------- |
+| Tab backgrounded during workout (iOS only) | Show centered **🔊 Tap to restore sound** button; one tap unlocks audio |
 | User taps START / Resume / 🔊 during workout | `unlockAudio()` synchronously in click handler |
 | Timer tick tries to beep while suspended | `playBeep` returns early — wait for next user gesture |
 | Screen lock during pause (wake lock released) | Context suspends; Resume must unlock again |

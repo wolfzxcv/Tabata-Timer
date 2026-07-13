@@ -7,6 +7,14 @@
     }"
   >
     <button
+      v-if="showIosAudioRestore"
+      type="button"
+      class="audio-restore-btn"
+      @click="timer.unlockAudio()"
+    >
+      🔊 Tap to restore sound
+    </button>
+    <button
       type="button"
       class="mute-btn"
       :aria-label="muted ? 'Unmute sounds' : 'Mute sounds'"
@@ -85,6 +93,7 @@
 import { computed, watch } from 'vue';
 import type { useTimer } from '../composables/useTimer';
 import { PHASE_COLORS, type IntervalType } from '../types/timer';
+import { isIos } from '../utils/isIos';
 
 const props = defineProps<{
   timer: ReturnType<typeof useTimer>;
@@ -94,6 +103,13 @@ const props = defineProps<{
 const emit = defineEmits<{
   toggleMuted: [];
 }>();
+
+const showIosAudioRestore = computed(
+  () =>
+    isIos() &&
+    props.timer.needsAudioRestore.value &&
+    !props.muted
+);
 
 const phaseStyle = computed(() => {
   if (props.timer.isComplete.value) {
@@ -165,6 +181,36 @@ function confirmExit() {
 }
 
 .mute-btn:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 2px;
+}
+
+@keyframes restore-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.35); }
+  50%       { transform: translate(-50%, -50%) scale(1.04); box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+}
+
+.audio-restore-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  padding: 1rem 1.75rem;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 0.75rem;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  animation: restore-pulse 1.8s ease-in-out infinite;
+}
+
+.audio-restore-btn:focus-visible {
   outline: 3px solid currentColor;
   outline-offset: 2px;
 }

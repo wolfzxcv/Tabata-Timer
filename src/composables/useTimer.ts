@@ -7,6 +7,7 @@ import {
   type WorkoutStatus
 } from '../types/timer';
 import { buildTimeline } from '../utils/buildTimeline';
+import { isIos } from '../utils/isIos';
 import { useAudio } from './useAudio';
 import { useWakeLock } from './useWakeLock';
 
@@ -19,6 +20,7 @@ export function useTimer(muted: Ref<boolean>) {
   const phaseEndTime = ref(0);
   const remainingSeconds = ref(0);
   const snapshotSettings = ref<TimerSettings | null>(null);
+  const needsAudioRestore = ref(false);
 
   let playedBeeps = new Set<number>();
   let loopTimer: ReturnType<typeof setInterval> | null = null;
@@ -80,6 +82,14 @@ export function useTimer(muted: Ref<boolean>) {
     if (loopTimer !== null) {
       clearInterval(loopTimer);
       loopTimer = null;
+    }
+  }
+
+  function unlockAudioFromGesture() {
+    unlockAudio();
+    needsAudioRestore.value = false;
+    if (status.value === 'ACTIVE' && isComplete.value && !muted.value) {
+      startCelebration();
     }
   }
 
@@ -155,15 +165,18 @@ export function useTimer(muted: Ref<boolean>) {
     tick(performance.now());
   }
 
+  function onForegroundReturn() {
+    if (!isIos() || status.value !== 'ACTIVE' || muted.value) return;
+    needsAudioRestore.value = true;
+  }
+
   function onVisibilityChange() {
-    if (
-      document.visibilityState === 'visible' &&
-      status.value === 'ACTIVE' &&
-      !isComplete.value
-    ) {
+    if (document.visibilityState !== 'visible') return;
+    if (status.value === 'ACTIVE' && !isComplete.value) {
       tick(performance.now());
       void acquire();
     }
+    onForegroundReturn();
   }
 
   async function start(settings: TimerSettings) {
@@ -172,8 +185,9 @@ export function useTimer(muted: Ref<boolean>) {
     currentIndex.value = 0;
     status.value = 'ACTIVE';
     pausedRemainingMs = null;
+    needsAudioRestore.value = false;
 
-    unlockAudio();
+    unlockAudioFromGesture();
 
     const now = performance.now();
     setPhaseEndFromNow(0, now);
@@ -182,6 +196,7 @@ export function useTimer(muted: Ref<boolean>) {
     startLoop();
     void acquire();
     document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('pageshow', onForegroundReturn);
   }
 
   function pause() {
@@ -194,7 +209,7 @@ export function useTimer(muted: Ref<boolean>) {
 
   function resume() {
     if (status.value !== 'PAUSED' || pausedRemainingMs === null) return;
-    unlockAudio();
+    unlockAudioFromGesture();
     phaseEndTime.value = performance.now() + pausedRemainingMs;
     pausedRemainingMs = null;
     status.value = 'ACTIVE';
@@ -205,8 +220,10 @@ export function useTimer(muted: Ref<boolean>) {
   function exitWorkout() {
     stopLoop();
     stopCelebration();
+    needsAudioRestore.value = false;
     void release();
     document.removeEventListener('visibilitychange', onVisibilityChange);
+    window.removeEventListener('pageshow', onForegroundReturn);
     status.value = 'IDLE';
     timeline.value = [];
     currentIndex.value = 0;
@@ -219,6 +236,7 @@ export function useTimer(muted: Ref<boolean>) {
     stopLoop();
     stopCelebration();
     document.removeEventListener('visibilitychange', onVisibilityChange);
+    window.removeEventListener('pageshow', onForegroundReturn);
   });
 
   watch(muted, (isMuted) => {
@@ -239,6 +257,7 @@ export function useTimer(muted: Ref<boolean>) {
     pause,
     resume,
     exitWorkout,
-    unlockAudio
+    needsAudioRestore,
+    unlockAudio: unlockAudioFromGesture
   };
 }
